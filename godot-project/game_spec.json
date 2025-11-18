@@ -1,0 +1,102 @@
+{
+  "game": {
+    "name": "Mini-Golf Adventures",
+    "type": "2D",
+    "description": "A colorful mini-golf game where players navigate themed courses with creative obstacles, aiming for perfect shots to earn stars and unlock rewards like ball skins and new themes.",
+    "genre": "puzzle",
+    "version": "1.0.0"
+  },
+  "settings": {
+    "window": {
+      "width": 1280,
+      "height": 720,
+      "resizable": true,
+      "fullscreen": false
+    },
+    "physics": {
+      "enabled": true
+    },
+    "rendering": {}
+  },
+  "scenes": [],
+  "assets": {
+    "sprites": [
+      {
+        "name": "golf_ball",
+        "path": "res://assets/sprites/golf_ball.png",
+        "type": "character"
+      },
+      {
+        "name": "hole",
+        "path": "res://assets/sprites/hole.png",
+        "type": "object"
+      },
+      {
+        "name": "windmill",
+        "path": "res://assets/sprites/windmill.png",
+        "type": "enemy"
+      },
+      {
+        "name": "bouncing_pad",
+        "path": "res://assets/sprites/bouncing_pad.png",
+        "type": "enemy"
+      },
+      {
+        "name": "candy_bg",
+        "path": "res://assets/sprites/candy_bg.png",
+        "type": "background"
+      },
+      {
+        "name": "pirate_bg",
+        "path": "res://assets/sprites/pirate_bg.png",
+        "type": "background"
+      },
+      {
+        "name": "jungle_bg",
+        "path": "res://assets/sprites/jungle_bg.png",
+        "type": "background"
+      },
+      {
+        "name": "winter_bg",
+        "path": "res://assets/sprites/winter_bg.png",
+        "type": "background"
+      }
+    ],
+    "sounds": [
+      {
+        "name": "shot",
+        "path": "res://assets/sounds/shot.wav",
+        "type": "sfx"
+      },
+      {
+        "name": "hole_in",
+        "path": "res://assets/sounds/hole_in.wav",
+        "type": "sfx"
+      },
+      {
+        "name": "bounce",
+        "path": "res://assets/sounds/bounce.wav",
+        "type": "sfx"
+      }
+    ],
+    "music": [
+      {
+        "name": "candy_theme",
+        "path": "res://assets/music/candy_theme.ogg"
+      },
+      {
+        "name": "pirate_theme",
+        "path": "res://assets/music/pirate_theme.ogg"
+      },
+      {
+        "name": "jungle_theme",
+        "path": "res://assets/music/jungle_theme.ogg"
+      },
+      {
+        "name": "winter_theme",
+        "path": "res://assets/music/winter_theme.ogg"
+      }
+    ]
+  },
+  "scripts": []
+}
