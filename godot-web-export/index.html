@@ -60,12 +60,86 @@
             font-size: 14px;
             font-weight: bold;
         }
+        #instructionsBtn {
+            background: linear-gradient(135deg, #ff8800, #ff6b00);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px 0;
+            transition: transform 0.2s;
+        }
+        #instructionsBtn:hover {
+            transform: scale(1.05);
+        }
+        #instructionsPanel {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+            color: #cccccc;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        #instructionsPanel h3 {
+            color: #ff8800;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        #instructionsPanel ul {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        #instructionsPanel.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <h1>🎮 Mini-Golf Adventures</h1>
         <div class="info">A colorful mini-golf game where players navigate themed courses with creative obstacles, aiming for perfect shots to earn stars and unlock rewards like ball skins and new themes.</div>
+        <button id="instructionsBtn">📖 How to Play & Controls</button>
+        <div id="instructionsPanel">
+            <h3>🎯 How to Play</h3>
+            <p>Guide the white golf ball into the black hole in as few strokes as possible across 4 themed worlds. Earn stars for great shots and progress to unlock new themes!</p>
+            <ul>
+                <li><strong>Start:</strong> Ball at bottom-left, hole at top-right. Par is 3 strokes per level.</li>
+                <li><strong>Aim & Shoot:</strong> Drag backward from the ball to aim/power, release to launch.</li>
+                <li><strong>Physics:</strong> Ball rolls, slows with friction, bounces off walls.</li>
+                <li><strong>Win:</strong> Ball overlaps hole → Earn stars (3 for 1 stroke, 2 for 2, 1 for 3). Auto-advance to next level.</li>
+                <li><strong>Themes:</strong> Candy (simple), Pirate (zig-zag), Jungle (ruins), Winter (ramps).</li>
+            </ul>
+            <h3>🕹️ All Controls</h3>
+            <p>Mouse/Touch only—no keyboard needed. Fully responsive!</p>
+            <ul>
+                <li><strong>Drag to Aim:</strong> Click/hold near ball (within 24px), drag opposite direction. Red dashed line shows path. Distance = power (max 15 units).</li>
+                <li><strong>Release to Shoot:</strong> Let go to fire. Min drag: 10px to prevent accidents.</li>
+                <li><strong>During Movement:</strong> Wait for ball to stop (speed < 0.5) before next shot.</li>
+                <li><strong>Cursor:</strong> Crosshair (ready), Grabbing (dragging).</li>
+                <li><strong>Mobile:</strong> Single-finger drag. Canvas scales to screen.</li>
+                <li><strong>Other:</strong> No pause—refresh page to restart. Stats update live.</li>
+            </ul>
+            <h3>💡 Tips</h3>
+            <ul>
+                <li>Use bounces for tricky angles.</li>
+                <li>Short drag = putt; Long = power shot.</li>
+                <li>Avoid over-shooting into walls!</li>
+                <li>Complete all levels for total stars.</li>
+            </ul>
+            <button onclick="this.parentElement.classList.remove('show')" style="background: rgba(255,0,0,0.7); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 10px;">Close</button>
+        </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div class="stats">
             <div>Level: <span id="level">1</span> - <span id="theme">Candy World</span></div>
@@ -78,6 +152,12 @@
         <div id="status" class="status">Welcome to Candy World! Aim and shoot for the hole.</div>
     </div>
     <script>
+        // Instructions panel toggle
+        document.getElementById('instructionsBtn').addEventListener('click', () => {
+            const panel = document.getElementById('instructionsPanel');
+            panel.classList.toggle('show');
+        });
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const levelElement = document.getElementById('level');
