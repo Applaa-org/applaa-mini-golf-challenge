@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini-Golf Adventures</title>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #cccccc;
+        }
+        #gameContainer {
+            text-align: center;
+            padding: 20px;
+        }
+        #gameCanvas {
+            border: 2px solid #ff8800;
+            border-radius: 8px;
+            background: #1a1a1a;
+            box-shadow: 0 4px 20px rgba(255, 136, 0, 0.3);
+            display: block;
+            margin: 20px auto;
+            cursor: crosshair;
+        }
+        h1 {
+            color: #ff8800;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .info {
+            color: #999999;
+            font-size: 14px;
+            margin-bottom: 20px;
+            max-width: 800px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 10px 0;
+            font-size: 16px;
+            color: #4ade80;
+        }
+        .controls {
+            margin-top: 15px;
+            color: #cccccc;
+            font-size: 13px;
+        }
+        .status {
+            margin-top: 10px;
+            color: #4ade80;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1>🎮 Mini-Golf Adventures</h1>
+        <div class="info">A colorful mini-golf game where players navigate themed courses with creative obstacles, aiming for perfect shots to earn stars and unlock rewards like ball skins and new themes.</div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="stats">
+            <div>Level: <span id="level">1</span> - <span id="theme">Candy World</span></div>
+            <div>Strokes: <span id="strokes">0</span></div>
+            <div>Total Stars: <span id="totalScore">0</span></div>
+        </div>
+        <div class="controls">
+            Drag backward from the ball to aim, release to shoot. Get the ball in the hole in as few shots as possible! Avoid walls and obstacles.
+        </div>
+        <div id="status" class="status">Welcome to Candy World! Aim and shoot for the hole.</div>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const levelElement = document.getElementById('level');
+        const themeElement = document.getElementById('theme');
+        const strokesElement = document.getElementById('strokes');
+        const totalScoreElement = document.getElementById('totalScore');
+        const statusElement = document.getElementById('status');
+        
+        // Game state
+        let currentLevel = 0;
+        let totalScore = 0;
+        let currentStrokes = 0;
+        let isDragging = false;
+        let mouse = { x: 0, y: 0 };
+        let ball = { x: 0, y: 0, vx: 0, vy: 0, r: 12 };
+        let hole = { x: 0, y: 0, r: 18 };
+        let walls = [];
+        let gameWon = false;
+        const friction = 0.985;
+        const minVelocity = 0.5;
+        const par = 3; // Par for all levels for simplicity
+        
+        // Themed levels
+        const levels = [
+            // Level 1: Candy World - Simple straight with one barrier
+            {
+                theme: 'Candy World',
+                colors: ['#ff69b4', '#da70d6'], // Pink to purple
+                wallColor: '#ff1493',
+                start: { x: 100, y: 550 },
+                hole: { x: 700, y: 100 },
+                walls: [
+                    { type: 'h', y: 50, x1: 0, x2: 800 }, // Top boundary
+                    { type: 'h', y: 550, x1: 0, x2: 800 }, // Bottom boundary
+                    { type: 'v', x: 50, y1: 50, y2: 550 }, // Left boundary
+                    { type: 'v', x: 750, y1: 50, y2: 550 }, // Right boundary
+                    // Inner barrier
+                    { type: 'v', x: 400, y1: 200, y2: 500 } // Central wall
+                ]
+            },
+            // Level 2: Pirate Cove - Zig-zag path
+            {
+                theme: 'Pirate Cove',
+                colors: ['#87CEEB', '#4682B4'], // Sky blue to ocean
+                wallColor: '#8B4513',
+                start: { x: 100, y: 550 },
+                hole: { x: 700, y: 100 },
+                walls: [
+                    { type: 'h', y: 50, x1: 0, x2: 800 },
+                    { type: 'h', y: 550, x1: 0, x2: 800 },
+                    { type: 'v', x: 50, y1: 50, y2: 550 },
+                    { type: 'v', x: 750, y1: 50, y2: 550 },
+                    // Zig-zag barriers
+                    { type: 'h', y: 300, x1: 100, x2: 300 },
+                    { type: 'v', x: 300, y1: 100, y2: 300 },
+                    { type: 'h', y: 200, x1: 300, x2: 500 },
+                    { type: 'v', x: 500, y1: 200, y2: 500 },
+                    { type: 'h', y: 400, x1: 500, x2: 700 }
+                ]
+            },
+            // Level 3: Jungle Ruins - More obstacles
+            {
+                theme: 'Jungle Ruins',
+                colors: ['#228B22', '#006400'], // Forest green
+                wallColor: '#8B4513',
+                start: { x: 100, y: 550 },
+                hole: { x: 700, y: 100 },
+                walls: [
+                    { type: 'h', y: 50, x1: 0, x2: 800 },
+                    { type: 'h', y: 550, x1: 0, x2: 800 },
+                    { type: 'v', x: 50, y1: 50, y2: 550 },
+                    { type: 'v', x: 750, y1: 50, y2: 550 },
+                    // Multiple barriers simulating ruins
+                    { type: 'v', x: 200, y1: 150, y2: 450 },
+                    { type: 'h', y: 250, x1: 200, x2: 400 },
+                    { type: 'v', x: 400, y1: 250, y2: 550 },
+                    { type: 'h', y: 150, x1: 500, x2: 700 },
+                    { type: 'v', x: 600, y1: 50, y2: 350 }
+                ]
+            },
+            // Level 4: Winter Land - Complex layout with "ramps" as narrow paths
+            {
+                theme: 'Winter Land',
+                colors: ['#E0FFFF', '#B0E0E6'], // Light blue to cyan
+                wallColor: '#4169E1',
+                start: { x: 100, y: 550 },
+                hole: { x: 700, y: 100 },
+                walls: [
+                    { type: 'h', y: 50, x1: 0, x2: 800 },
+                    { type: 'h', y: 550, x1: 0, x2: 800 },
+                    { type: 'v', x: 50, y1: 50, y2: 550 },
+                    { type: 'v', x: 750, y1: 50, y2: 550 },
+                    // Narrow paths and barriers
+                    { type: 'v', x: 150, y1: 100, y2: 500 },
+                    { type: 'h', y: 400, x1: 150, x2: 350 },
+                    { type: 'v', x: 350, y1: 200, y2: 400 },
+                    { type: 'h', y: 250, x1: 350, x2: 550 },
+                    { type: 'v', x: 550, y1: 250, y2: 550 },
+                    { type: 'h', y: 100, x1: 600, x2: 750 }
+                ]
+            }
+        ];
+        
+        function loadLevel(levelIndex) {
+            if (levelIndex >= levels.length) {
+                statusElement.textContent = 'Congratulations! You completed all levels!';
+                gameWon = true;
+                return;
+            }
+            currentLevel = levelIndex;
+            const level = levels[currentLevel];
+            ball.x = level.start.x;
+            ball.y = level.start.y;
+            ball.vx = 0;
+            ball.vy = 0;
+            hole.x = level.hole.x;
+            hole.y = level.hole.y;
+            walls = [...level.walls];
+            currentStrokes = 0;
+            gameWon = false;
+            levelElement.textContent = currentLevel + 1;
+            themeElement.textContent = level.theme;
+            strokesElement.textContent = currentStrokes;
+            statusElement.textContent = `Level ${currentLevel + 1}: ${level.theme}. Par: ${par}. Aim and shoot!`;
+        }
+        
+        function resetShot() {
+            ball.vx = 0;
+            ball.vy = 0;
+        }
+        
+        function checkWin() {
+            const distToHole = Math.hypot(ball.x - hole.x, ball.y - hole.y);
+            if (distToHole < (hole.r - ball.r + 5)) { // Allow slight overlap
+                const stars = Math.max(0, par - (currentStrokes - 1)); // 3 stars for 1 shot, 2 for 2, 1 for 3, 0 for more
+                totalScore += stars;
+                totalScoreElement.textContent = totalScore;
+                statusElement.textContent = `Hole in! Earned ${stars} stars in ${currentStrokes} strokes. Next level...`;
+                setTimeout(() => {
+                    loadLevel(currentLevel + 1);
+                }, 2000);
+                return true;
+            }
+            return false;
+        }
+        
+        function handleCollisions() {
+            for (let wall of walls) {
+                if (wall.type === 'v') { // Vertical wall
+                    if (Math.abs(ball.x - wall.x) < ball.r && ball.y > wall.y1 && ball.y < wall.y2) {
+                        ball.vx *= -1;
+                        if (ball.vx > 0) {
+                            ball.x = wall.x + ball.r;
+                        } else {
+                            ball.x = wall.x - ball.r;
+                        }
+                    }
+                } else if (wall.type === 'h') { // Horizontal wall
+                    if (Math.abs(ball.y - wall.y) < ball.r && ball.x > wall.x1 && ball.x < wall.x2) {
+                        ball.vy *= -1;
+                        if (ball.vy > 0) {
+                            ball.y = wall.y + ball.r;
+                        } else {
+                            ball.y = wall.y - ball.r;
+                        }
+                    }
+                }
+            }
+            
+            // Boundary checks (redundant but ensures no escape)
+            if (ball.x - ball.r < 50 || ball.x + ball.r > 750) ball.vx *= -1;
+            if (ball.y - ball.r < 50 || ball.y + ball.r > 550) ball.vy *= -1;
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            if (gameWon) return;
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+            const distToBall = Math.hypot(mouse.x - ball.x, mouse.y - ball.y);
+            if (distToBall < ball.r * 2 && Math.hypot(ball.vx, ball.vy) < minVelocity) {
+                isDragging = true;
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+            if (isDragging) {
+                canvas.style.cursor = 'grabbing';
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+        });
+        
+        canvas.addEventListener('mouseup', (e) => {
+            if (!isDragging || gameWon) return;
+            isDragging = false;
+            canvas.style.cursor = 'crosshair';
+            const dx = ball.x - mouse.x;
+            const dy = ball.y - mouse.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 10) { // Minimum drag distance to shoot
+                const power = Math.min(dist / 20, 15); // Max power 15
+                ball.vx = (dx / dist) * power;
+                ball.vy = (dy / dist) * power;
+                currentStrokes++;
+                strokesElement.textContent = currentStrokes;
+            }
+        });
+        
+        function update() {
+            if (gameWon) return;
+            
+            const speed = Math.hypot(ball.vx, ball.vy);
+            if (speed > minVelocity) {
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+                ball.vx *= friction;
+                ball.vy *= friction;
+                handleCollisions();
+                if (checkWin()) return;
+            } else if (speed > 0) {
+                ball.vx = 0;
+                ball.vy = 0;
+            }
+        }
+        
+        function render() {
+            const level = levels[currentLevel];
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, level.colors[0]);
+            gradient.addColorStop(1, level.colors[1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw walls
+            ctx.lineWidth = 12;
+            ctx.strokeStyle = level.wallColor;
+            ctx.lineCap = 'round';
+            for (let wall of walls) {
+                ctx.beginPath();
+                if (wall.type === 'v') {
+                    ctx.moveTo(wall.x, wall.y1);
+                    ctx.lineTo(wall.x, wall.y2);
+                } else {
+                    ctx.moveTo(wall.x1, wall.y);
+                    ctx.lineTo(wall.x2, wall.y);
+                }
+                ctx.stroke();
+            }
+            
+            // Draw hole
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(hole.x, hole.y, hole.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Draw ball
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw aim line if dragging
+            if (isDragging) {
+                ctx.strokeStyle = '#FF0000';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(ball.x, ball.y);
+                ctx.lineTo(mouse.x, mouse.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize
+        loadLevel(0);
+        gameLoop();
+        
+        console.log('🎮 Mini-Golf Adventures loaded successfully! Drag to aim and shoot through themed courses.');
+    </script>
+</body>
+</html>
